@@ -7,7 +7,7 @@ import random
 
 class Genes:
 	#initialize variables 
-	def __init__ (self, GRAPH, ITERATION, NODES, CHILDS, MUT, start, stop):
+	def __init__ (self, GRAPH, ITERATION, NODES, CHILDS, MUT, start, stop, firstParent, secondParent):
 		self.iteration = ITERATION
 		self.numberOfNodes = NODES
 		self.numberOfChilds = CHILDS
@@ -15,16 +15,17 @@ class Genes:
 		self.GRAPH = GRAPH
 		self.startCity = start
 		self.stopCity = stop
-		self.parent1 = [-1]*self.numberOfNodes
-		self.parent2 = [-1]*self.numberOfNodes
 		self.newChilds = [[-1]*self.numberOfNodes]*self.numberOfChilds
-		self.bestRoute = [-1]*self.numberOfNodes
+		self.bestRoute = []
 		self.offSpring = [-1]*self.numberOfNodes
 		self.cpyOffSpring = [-1]*self.numberOfNodes
 		self.costOfParent1 = 0
 		self.costOfParent2 = 0
+		self.parent1 = firstParent
+		self.parent2 = secondParent
 
 	def makeRoute(self):
+		print(np.matrix(self.GRAPH))
 		self.setParents()
 
 		for i in range(self.iteration):
@@ -48,10 +49,12 @@ class Genes:
 					choose = random.randint(0, 1)
 					mutate = random.randint(1, 100)
 
-					if choose==0 or self.parent2[k]==-1: 
-						self.offSpring[k] = self.parent1[k]
-					elif choose==1 or self.parent1[k]==-1: 
-						self.offSpring[k] = self.parent2[k]
+					if choose==0 or k>len(self.parent2):
+						if k<len(self.parent1):
+							self.offSpring[k] = self.parent1[k]
+					elif choose==1 or k>len(self.parent1): 
+						if k<len(self.parent2):
+							self.offSpring[k] = self.parent2[k]
 
 					if mutate<self.mutateLvl: 
 						self.offSpring[k] = random.randint(0, self.numberOfNodes-1)
@@ -92,13 +95,18 @@ class Genes:
 						break
 				if isStopCity == False: properOffspring = False
 
+				for k in range(self.numberOfNodes):
+					if self.offSpring[k]==self.stopCity: break
+					if self.offSpring[k]==-1:
+						properOffspring = False
+						break
 
 				if properOffspring == True:
 					for k in range(self.numberOfNodes):
 						self.newChilds[nChild][k] = self.offSpring[k]
 					nChild += 1
 
-			self.printChilds(nChild)
+			#self.printChilds(nChild)
 
 			for j in range(nChild):
 				if(self.newChilds[j][0]==self.startCity):
@@ -106,89 +114,71 @@ class Genes:
 					diff = 0
 					for k in range(1, self.numberOfNodes):
 						if self.newChilds[j][k]==-1: break
-
 						cost += self.GRAPH[self.newChilds[j][k-1]][self.newChilds[j][k]]
 
 					diff = self.costOfParent1 - self.costOfParent2
-					print(cost)
+
 					if diff >= 0 and cost<=self.costOfParent1:
+						self.parent1 = []
 						for c in range(self.numberOfNodes):
-							self.parent1[c] = self.newChilds[j][c]
+							self.parent1.append(self.newChilds[j][c])
 							self.costOfParent1 = cost
-							if cost<=self.costOfBestRoute:
-								self.bestRoute[c] = self.newChilds[j][c]
-								self.costOfBestRoute = cost
 
 					if diff<0 and cost<=self.costOfParent2:
+						self.parent2 = []
 						for c in range(self.numberOfNodes):
-							self.parent2[c] = self.newChilds[j][c]
+							self.parent2.append(self.newChilds[j][c])
 							self.costOfParent2 = cost
-							if cost<=self.costOfBestRoute:
-								self.bestRoute[c] = self.newChilds[j][c]
-								self.costOfBestRoute = cost
+
+					if cost<=self.costOfBestRoute:
+						self.bestRoute = []
+					for c in range(self.numberOfNodes):
+						if cost<=self.costOfBestRoute:
+							self.bestRoute.append(self.newChilds[j][c])
+							self.costOfBestRoute = cost
+
 
 			print('Iteration finished!')
 			for p in range(40): print('-', end=" ", flush=True)
 			print()
+		self.printBestRoute()
 
 			
 
 	def setParents(self):
-	#setting up example parents for first iteration, also setting up bestRoute and compute cost
-		self.parent1[0] = 3
-		self.parent1[1] = 6
-		self.parent1[2] = 9
-		self.parent1[3] = 10
-		self.parent1[4] = 11
-		self.parent1[5] = 5
-		self.parent1[6] = 8
-
-		self.parent2[0] = 3
-		self.parent2[1] = 0
-		self.parent2[2] = 1
-		self.parent2[3] = 2
-		self.parent2[4] = 5
-		self.parent2[5] = 8
-
-		par1=1 
-		par2=1
-
-		while self.parent1[par1] != -1:
-			self.costOfParent1 += self.GRAPH[self.parent1[par1-1]][self.parent1[par1]] 
-			par1 += 1
+		for i in range(len(self.parent1)):
+			self.costOfParent1 += self.GRAPH[self.parent1[i-1]][self.parent1[i]] 
 		
-		while self.parent2[par2] != -1:
-			self.costOfParent2 += self.GRAPH[self.parent2[par2-1]][self.parent2[par2]]
-			par2 += 1
+		for i in range(len(self.parent2)):
+			self.costOfParent2 += self.GRAPH[self.parent2[i-1]][self.parent2[i]]
 
 		if self.costOfParent1 > self.costOfParent2:
 			self.costOfBestRoute = self.costOfParent2
-			for i in range(self.numberOfNodes):
-				if self.parent2[i] != -1: self.bestRoute[i] = self.parent2[i]
-
+			for i in range(len(self.parent2)):
+				self.bestRoute.append(self.parent2[i])
 		else:
 			self.costOfBestRoute = self.costOfParent1
-			for i in range(self.numberOfNodes):
-				if self.parent1[i] != -1: self.bestRoute[i] = self.parent1[i]
+			for i in range(len(self.parent1)):
+				self.bestRoute.append(self.parent1[i])
 
 
 	def printParents(self):
 		#Method to print info about parents
 		print('First parent: ', end="", flush=True)
-		for i in range(self.numberOfNodes):
-			if self.parent1[i] != -1: print(self.parent1[i], end=" ", flush=True)
+		for i in range(len(self.parent1)):
+			if self.parent1[i]!=-1: print(self.parent1[i], end=" ", flush=True)
 		print('		Cost: ' + str(self.costOfParent1))
 
 		print('Second parent: ', end="", flush=True)
-		for i in range(self.numberOfNodes):
-			if self.parent2[i] != -1: print(self.parent2[i], end=" ", flush=True)
+		for i in range(len(self.parent2)):
+			if self.parent2[i]!=-1: print(self.parent2[i], end=" ", flush=True)
 		print('		Cost: ' + str(self.costOfParent2))
 
 
 	def printBestRoute(self):
 		print('Currently best route: ', end="", flush=True) 
-		for i in range(self.numberOfNodes):
-			if self.bestRoute[i] != -1: print(self.bestRoute[i], end=" ", flush=True)
+		for i in range(len(self.bestRoute)):
+			if self.bestRoute[i]!=-1: print(self.bestRoute[i], end=" ", flush=True)
 		print('	Cost: ' + str(self.costOfBestRoute))
 
 
