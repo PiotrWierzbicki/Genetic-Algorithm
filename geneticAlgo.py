@@ -3,6 +3,7 @@
 
 import copy
 import csv
+import numpy as np
 
 import randPaths
 import genes
@@ -10,7 +11,7 @@ import genes
 #Set here: number of iteration, childs(in one iteration), and possibility of mutation in percent:
 ITERATION = 10
 CHILDS = 100
-MUT = 20
+MUT = 10
 
 GRAPH = [[]]
 NODES=0
@@ -38,3 +39,7 @@ secondParent = paths.makeRoute()
 
 gen = genes.Genes(GRAPH, ITERATION, NODES, CHILDS, MUT, startCity, stopCity, firstParent, secondParent)
 gen.makeRoute()
+
+firstPath = gen.returnBestRoute()
+print()
+print('Best route: ' + str(firstPath))
