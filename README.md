@@ -16,3 +16,5 @@ You can modify:
 - number of childs, to change number of childs in one generation
 - mutation level(in percent), to change possibility of mutation
 - network - it must be in the same folder, and must be '.csv' file
+
+Test 2023
